@@ -41,7 +41,7 @@
   test <- time^2
   test
   
-#Note how "test" was overwitten without warning
+#Note how "test" was over-written without warning
 
 
 #1.5 A graphics window opens when needed - make sure it is visible

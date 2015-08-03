@@ -1,0 +1,217 @@
+---
+title: "Reproducible Research with R - An example"
+author: "Richard Upton"
+date: "Thursday, July 16, 2015"
+output: html_document
+---
+
+This example illustrates the power of using a scripting language like R for reproducible research, as discussed in this paper by Gentleman and Lang:
+
+[Gentleman, 2004](file://p:/OSUcourse2015/Rcourse_Day1/0_Rdemo/Gentleman_2004_Reproducible_Research.pdf)
+
+Reproducible research requires the integration of the computations and code used in data analyses, methodological descriptions, simulations, etc. with the documents that describe and rely on them.  The analyse method should be completely traceable from the original data file to the final report/manuscript.  This means doing the entire analysis using a scripting language rather than a series of untraceable menu selections in a gui. This document is actually written in Markdown, a simple text language that can include "chunks" of R code.
+
+This analysis makes use of several simple collections of functions which are kept in the SourceFiles subfolder:  
+* *functions_wfn.R* allows Wings for NONMEM to be run within R   
+
+* *functions_study_plot.R* has pre-written plotting functions in ggplot2 developed specifically for this data set. They are an extension of plots used for data check-out. 
+
+* *functions_utility.R* is a collection of miscellaneous utility functions that perform common tasks.
+
+In practice, it is better to divide code into functions and/or blocks.  This is one long script for illustration.
+
+#-------------------------------------------------------------------------------
+## Using R for data collation
+
+The data were supplied on 31 Jan as three spreadsheets: 
+
+[concs.csv](file://P:/OSUcourse2015/Rcourse_Day1/0_Rdemo/concs.csv) 
+
+[doses.csv](file://P:/OSUcourse2015/Rcourse_Day1/0_Rdemo/doses.csv)  
+
+[covariates.csv](file://P:/OSUcourse2015/Rcourse_Day1/0_Rdemo/covariates.csv)  
+
+
+### Set up the R environment  
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+#remove all current objects in the workspace
+ rm(list=ls(all=TRUE))
+
+
+#Set the working directory
+  working.dir <- "P:/OSUcourse2015/Rcourse_Day1/0_Rdemo"
+  setwd(working.dir)
+
+#Load libraries
+  library(ggplot2)
+  library(GGally)
+  library(doBy)
+  library(reshape)
+  library(grid)
+  library(cowplot)
+   
+#Source WfN functions
+  source("SourceFiles/functions_WfN.R")
+
+#Source study specific plot functions  
+  source("SourceFiles/functions_study_plot.R")
+  
+#Source utility functions
+  source("SourceFiles/functions_utility.R")
+
+```
+
+### Read the file of concentration data  
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+
+  concdatain <- read.csv("concs.csv")  
+
+  head(concdatain)  
+  dim(concdatain)  
+
+```
+  
+### Use the reshape package to convert from a wide to a long format  
+Manipulating data formats is a very common task in data analysis.  
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+
+   concdata_melt <- melt(concdatain, id=c("TIME"), na.rm=T)
+
+   head(concdata_melt)
+   dim(concdata_melt)
+   
+   concdata <- cast(concdata_melt, variable + TIME ~ ...)
+   #formula is column ~ row, ... is any other variable
+
+   head(concdata)
+   dim(concdata)
+
+```
+   
+### Neaten up
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+names(concdata) <- c("ID","TIME","DV")   #rename columns
+concdata$ID <- gsub("ID","",concdata$ID)  #remove unwanted text in ID column
+concdata$ID <- as.numeric(concdata$ID)   #change text to numbers
+```
+
+### Read a file of dose data
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+dosedata <- read.csv("doses.csv")
+head(dosedata)
+dim(dosedata)
+```
+  
+  
+### Read a file of covariate data
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+covdata <- read.csv("covariates.csv")
+head(covdata)
+dim(covdata)
+```
+ 
+ 
+### Merge data from the 3 files into 1 dataframe
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+alldata <- merge(concdata,dosedata, all=T)
+alldata <- merge(alldata,covdata, all=T)
+```
+  
+  
+### Tidy up merged data to suit NONMEM's requirements
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+alldata$CMT[is.na(alldata$CMT)==T] <- 2   #Assign remaining compartment flags
+alldata$MDV[is.na(alldata$MDV)==T] <- 0   #Assign remaining missing data flags
+alldata$TIME[alldata$TIME==-0.1] <- 0     #Adjust time for dose events
+   
+alldata <- subset(alldata, select=c(-Description))  #Remove description column
+names(alldata)[1] <- "CID"                          #Comment out column labels
+```
+  
+### Inspect and write in NONMEM format
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+    head(alldata)
+    dim(alldata)
+    write.csv(alldata, file="data_example.csv", na=".", quote=F, row.names=F)
+```
+  
+This produced the following spreadsheet of data in NONMEM format ready for fitting:
+
+[data_example.csv](file://P:/OSUcourse2015/Rcourse_Day1/0_Rdemo/data_example.csv)
+
+
+#-------------------------------------------------------------------------------
+##Using R for running a NONMEM model via WfN
+ 
+A NONMEM control stream was prepared manually, and uses the data file prepared above:
+
+[2comp_example.ctl](file://P:/OSUcourse2015/Rcourse_Day1/0_Rdemo/2comp_example.ctl)
+
+### Run the control stream
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+   nmgo("2comp_example.ctl", pause.nm=F) 
+```
+     
+### Change to the output directory, and run the diagnostic plot functions
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+   output.dir <- "/2comp_example.nm7"
+   setwd(paste(working.dir,output.dir, sep=""))
+   
+   
+  diagnostic.plots("2comp_example.fit","CWRESI", c("CL","V2","Q","V3","KA"))
+      
+  covariate.cont.plots("2comp_example.fit", "cov.cont.plot", c("CL","V2","Q","V3","KA"), c("AGE","WEIGHT"))
+      
+   covariate.cat.plots("2comp_example.fit", "cov.cat.plot", c("CL","V2","Q","V3","KA"), c("ROUTE","DOSE","AGE2"))
+      
+   setwd(working.dir)
+```
+   
+ 
+### Look at the parameter values
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+   nmmbt()
+   param.table <- read.delim("nmmbt.nm7.txt")
+   param.table
+```
+   
+
+#---------------------------------------------------------------------------------------
+## A Visual Predictive Check
+
+### Copy fitted parameter values to control stream and run
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+   nmctl("2comp_example.ctl")
+   ctl.to.sim("2comp_example.ctl")  #Turns off $EST line, turns on $SIM, appends "_sim." to file name
+   nmgo("2comp_example_sim.ctl", pause.nm=F)   
+```
+  
+### Copy the data file to where it is needed
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+   #output.dir <- "/2comp_example_sim.nm7"
+   #setwd(paste(working.dir,output.dir,sep=""))
+  
+   
+          file.copy(from=paste(working.dir,"/data_example.csv", sep=""),
+                     to=paste(working.dir,"/2comp_example_sim.nm7/data_example.csv",sep=""), overwrite=T)
+```
+        
+### Read and process the simulated data (*.fit)
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+         output.dir <- "/2comp_example_sim.nm7"
+         setwd(paste(working.dir,output.dir,sep=""))
+         read.sim.fit("2comp_example_sim.fit")  #This function avoids the slow read (hours) of the usual scan function
+```
+         
+### Plot a VPC by DOSE and ROUTE
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F} 
+   #plot.VPCconc.byDOSEROUTE("data_example.csv","2comp_example_sim.fit.csv")
+``` 
+   
+### Example Visual Predictive Check Plot
+```{r prompt=T, echo=T, comment=NA, cache=F, message = F, warning = F}
+
+  setwd(working.dir) 
+
+```
+  ![image](2comp_example_sim.nm7/VPCconc_by_DOSEROUTE_log.jpg)
