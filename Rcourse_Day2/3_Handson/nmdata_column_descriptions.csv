@@ -1,0 +1,22 @@
+"#Column desciptions for the file ""nmdata.csv""",,
+ID,Subject ID number,
+TIME,Minutes since dose,
+GROUP,Dose group,
+,1,50 ug i.v.
+,2,50 ug s.c.
+,3,200 ug i.v.
+,4,200 ug s.c.
+DOSE,Dose in ug,
+ROUTE,Route of administration,
+,0,intravenous
+,1,subcutaneous
+AMT,Dose vent,
+DV,Fentanyl concentration (ng/ml) ,
+MDV,Missing DV flag,
+,0,Not missing
+,1,Missing
+AGE,Age in years,
+WEIGHT,Weight in kg,
+SEX,Sex,
+,0,Male
+,1,Female
