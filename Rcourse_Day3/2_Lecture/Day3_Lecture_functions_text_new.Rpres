@@ -1,0 +1,361 @@
+<style>
+
+.reveal h2 {
+  color: blue;
+}
+
+.reveal h3 {
+  color: gray;
+}
+
+.small-code pre code {
+  font-size: 1em;
+}
+.midcenter {
+    position: fixed;
+    top: 10%;
+    left: 25%;
+}
+
+}
+</style>
+
+
+Writing and Applying Functions - Text Strings
+========================================================
+author: Richard Upton
+date: 5 August 2015
+width: 960
+height: 700
+transition: rotate
+font-import: http://fonts.googleapis.com/css?family=Roboto
+font-import: http://fonts.googleapis.com/css?family=PT_Sans
+font-family: 'Roboto'
+
+
+```{r setup, cache = F, echo = F, message = F, warning = F}
+# make this an external chunk that can be included in any file
+#options(width = 70)
+require(ggplot2);
+require(doBy);
+```
+
+
+Functions
+========================================================
+
+  * Functions are a key element of R  
+  * Functions take an input, process it and return an output  
+  * The function output can be assigned to another object
+  * R has base functions and functions from installed packages
+  * Writing your own functions unleashes the power of R!
+
+
+Using Functions
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+mydata <- rnorm(1000) 
+hist(mydata)
+``` 
+
+
+Using Functions
+========================================================
+Are there arguments for **hist** that give us more control?
+
+![](images/histhelp.png)
+
+
+Using Functions
+========================================================
+
+Arguments to functions can be supplied by name or by order  
+
+Try to limit using order when more than 1 argument  
+
+The first argument of **hist** is "x", the data  
+The second argument is "breaks"  
+
+This argument can have multiple formats  
+ * A text string giving the cell method  
+ * A number giving the number of cells  
+    
+There is also an argument "main" for a plot title 
+
+Functions can have default values for arguments 
+
+
+Function arguments by order
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+hist(mydata, 50)  
+``` 
+
+
+Function arguments by name
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+hist(x=mydata, breaks=50, main="Histogram of Random Numbers")
+``` 
+
+
+Writing Functions
+========================================================
+class: small-code
+
+Functions in R take the following format: 
+
+```{r prompt=F, comment=NA, echo = T, cache=T}
+  addtwo <- function(x) {
+     y <- x+2
+     y }
+``` 
+
+  * x is the function argument - the input to the function
+  * all the calculations take place between the curly brackets
+  * objects outside a function can be used in the function "environment"  
+  * objects assigned inside a function are local to the function "environment"  
+  * y is the output (result of the last line of function)
+
+
+Testing the function
+========================================================
+
+```{r prompt=F, comment=NA, echo = T, cache=T} 
+  test <- c(2,3,4)
+  result <- addtwo(test)
+
+  result
+``` 
+
+
+
+Global and local variables
+========================================================
+class: small-code
+
+```{r prompt=F, comment=NA, echo = T, cache=T}
+  addtwo <- function(x) {
+     y <- x+2
+     y }
+```
+
+```{r prompt=F, comment=NA, echo = T, cache=T} 
+  test <- c(2,3,4)
+  result <- addtwo(test)
+
+  #y
+```
+
+y is not found in the global environment; it's local to addtwo  
+
+
+Default argument values
+========================================================
+class: small-code
+
+```{r prompt=F, comment=NA, echo = T, cache=T}
+  addnum <- function(x, num=4) {
+     y <- x+num
+     y }
+
+``` 
+Unless a value for *num* is given, it will default to 4
+
+```{r prompt=F, comment=NA, echo = T, cache=T}
+  test <- c(2,3,4)
+  result <- addnum(test)
+  result
+  result <- addnum(test, num=6)
+  result
+``` 
+
+========================================================
+
+![](images/background_Cliff.jpg)
+
+
+
+Applying Functions
+========================================================
+
+Often, we need to *apply* a function by a factor:  
+  * Mean of data by Treatment group
+  * Maximum concentration by Subject
+  * Percent of baseline by Subject
+  * AUC by Treatment and Age
+  * Summarising demographic data
+
+
+Applying Functions
+========================================================
+
+We have some options:  
+The **apply** family of functions in the base  
+Effective but a little cluncky  
+  
+The **doBy** package:  
+Easy syntax 
+list outputs may need further processing  
+
+The **plyr** and **dplyr** packages  
+Easy syntax (but different to doBy)  
+Returns dataframes, lists and more  
+
+
+Applying Functions - Example data
+========================================================
+
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+exampledata <- read.csv("data_apply.csv")
+exampledata
+```
+
+
+Applying Functions - the doBy package
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+library(doBy)
+summarydata <- summaryBy(AUC~ID, data=exampledata, FUN=mean)
+summarydata 
+```
+
+
+Applying Functions - the doBy package
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+library(doBy)
+summarydata <- summaryBy(AUC~DOSE, data=exampledata, FUN=mean)
+summarydata 
+```
+
+
+Applying Functions - the doBy package
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+library(doBy)
+summarydata <- summaryBy(AUC~ID+DOSE, data=exampledata, FUN=mean)
+summarydata 
+```
+
+
+========================================================
+
+![](images/PA020030.jpg)
+
+
+Text Strings
+========================================================
+
+Text is delineated by quotes: "my text string"  
+Text makes an object of class *character*  
+Text strings are important in R as:  
+  * object names  
+  * working directory paths  
+  * file names  
+  * data  
+
+R has a number of tools for manipulating text strings  
+
+
+Paste to join text strings
+========================================================
+class: small-code
+
+```{r prompt=F, comment=NA, echo = F, cache=T} 
+ exampledata <- NULL
+``` 
+
+```{r prompt=F, comment=NA, echo = T, cache=T} 
+  string1 <- "PhaseI"
+  string2 <- "Control"
+  filename <- paste(string1,string2,".csv", sep="")
+  filename
+  write.csv(exampledata, file=filename)
+``` 
+
+the *sep* argument defaults to a single space.  
+It's set to "no space" here.  
+
+
+Text matching in R
+========================================================
+
+There are a number of R methods for manipulating text  
+Many are based on pattern matching using "regular" expressions  
+**regex** are a common standard in many computing systems  
+**regex** are a compact, powerful and confusing instructions for text matching  
+See ?regex for an introduction  
+See ?glob2rx for a Windows wildcard format  
+**gsub** will get the basics done  
+
+
+gsub to edit text strings
+========================================================
+class: small-code
+
+First argument is old text  
+Second argument is new text  
+
+```{r prompt=F, comment=NA, echo = T, cache=T} 
+  filename
+  filename2 <- gsub("PhaseI","PhaseIaVolunteer",filename)
+  filename2
+``` 
+
+
+Splitting text strings
+========================================================
+
+We have some options: 
+
+The **strsplit** function in the base package  
+Effective but a little cluncky  
+
+The **stringr** package (Hadley Wickham again)  
+Handy for splitting strings into columns  
+This is a common task in pharmacometrics  
+
+
+String splitting
+========================================================
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+library(stringr)
+exampledata <- read.csv("data_string.csv")
+exampledata
+```
+
+
+String splitting
+========================================================
+class: small-code
+
+The TIME column is split into 2 columns at "_"
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+newcols <- str_split_fixed(exampledata$TIME,"_",2)
+exampledata$TIMEnumber <- as.numeric(newcols[,1])
+exampledata$TIMEtext <- newcols[,2]
+exampledata
+```
+
+========================================================
+
+![](images/532219_568553416512252_910690945_n.jpg)
+
+
+
