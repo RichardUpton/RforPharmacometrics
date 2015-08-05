@@ -1,0 +1,497 @@
+<style>
+
+.reveal h2 {
+  color: blue;
+}
+
+.reveal h3 {
+  color: gray;
+}
+
+.small-code pre code {
+  font-size: 1em;
+}
+.midcenter {
+    position: fixed;
+    top: 10%;
+    left: 25%;
+}
+
+}
+</style>
+
+
+Merging data, Dates
+========================================================
+author: Richard Upton
+date: 6 August 2015
+width: 960
+height: 700
+transition: rotate
+font-import: http://fonts.googleapis.com/css?family=Roboto
+font-import: http://fonts.googleapis.com/css?family=PT_Sans
+font-family: 'Roboto'
+
+
+```{r setup, cache = F, echo = F, message = F, warning = F}
+# make this an external chunk that can be included in any file
+#options(width = 70)
+require(ggplot2);
+require(doBy);
+require(plyr)
+```
+
+
+Merging data
+========================================================
+
+  Combining data from different sources and in different formats into an R dataframe  
+
+  We might merge data when:  
+
+  * Setting up data for a graphical analysis 
+  * Setting up data for a NONMEM analysis 
+  * Combining the results of NONMEM analyses(simulations) 
+
+
+R data import
+========================================================
+
+R can read data in many formats: 
+
+  * see the "R Data Import/Export" manual
+  * Spreadsheet like (*.csv)
+  * Native Excel (*.xls, *.xlsx)
+  * Minitab, S-PLUS, SAS, SPSS, Stata, Systat
+  * Relational databases (mySQL etc.)
+  * Image files
+  * Text files (*.txt)
+  * Web pages (*.html, *.xml)
+
+
+Data preparation
+========================================================
+
+In pharmacometrics, data might arrive as:  
+  * Excel spreadsheets (*.csv, *.xlsx) 
+  * Proprietary statistical software (SAS transport files) 
+  * Word documents (tables) 
+  * PDF documents (tables) 
+  * Handwritten experimental records 
+
+
+
+Comma separated variable file (*.csv)
+========================================================
+
+Get the data into a *.csv file for reading into R  
+  
+This is not trivial and is error prone!  
+
+*.csv is a text document (can be read with Notepad etc.)  
+
+Simple, readable non-proprietary format  
+
+Data structured as columns  
+
+Columns are separated by comma's  
+(not in all countries!)  
+
+Data often has a header row with column names  
+
+
+========================================================
+
+![](images/csvastext.png)
+
+
+
+========================================================
+
+![](images/csvasspreadsheet.png)
+
+
+
+Reading csv data
+========================================================
+class: small-code
+
+* the "read.csv" function
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+exampledata <- read.csv("example.csv", na.strings=c("not done"), stringsAsFactors=F)
+exampledata
+```
+
+* see also the "skip" and "header" arguments ?read.csv
+
+
+
+The "rbind" function
+========================================================
+class: small-code
+
+* Joins two dataframes by row
+* They need the same columns with the same names
+
+```{r prompt=T, comment=NA, echo = F, cache=T}
+data1 <- read.csv("rbind1.csv", stringsAsFactors=F)
+data2 <- read.csv("rbind2.csv", stringsAsFactors=F)
+```
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+data1
+```
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+data2
+```
+
+
+The "rbind" function
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+alldata <- rbind(data1,data2)
+alldata
+```
+
+
+The "cbind" function
+========================================================
+class: small-code
+
+* Joins two dataframes by column
+* They need the same number of rows
+
+```{r prompt=T, comment=NA, echo = F, cache=T}
+data1 <- read.csv("cbind1.csv", stringsAsFactors=F)
+data2 <- read.csv("cbind2.csv", stringsAsFactors=F)
+```
+
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+data1
+```
+
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+data2
+```
+
+
+
+The "cbind" function
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+alldata <- cbind(data1,data2)
+alldata
+```
+
+
+The powerful "merge" function
+========================================================
+class: small-code
+
+* Joins two dataframes by common columns
+
+```{r prompt=T, comment=NA, echo = F, cache=T}
+data1 <- read.csv("merge1.csv", stringsAsFactors=F)
+data2 <- read.csv("merge2.csv", stringsAsFactors=F)
+```
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+data1
+```
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+data2
+```
+
+
+The "merge" function
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+alldata <- merge(data1,data2, all=T)
+alldata
+```
+
+
+Reshaping data
+========================================================
+
+  The classic problem is converting from wide to long format  
+
+  I wish this was easy, but it isn't  
+
+  *reshape* is a function in the base package  
+
+  *reshape* is also a package by Hadley Wickham which  provides the "melt" and "cast" functions
+
+  most jobs can be done using melt & cast
+  
+  see also the "tidyr" package by Hadley Wickham
+
+
+
+Melt & Cast
+========================================================
+
+  The presumption is that all data can be "melted" down into one dependent variable column and a number of identifier columns.
+
+  Sounds implausible, but it seems to be the case.
+
+  Data can be "cast" into new formats by splitting the identifier into rows or columns.   
+
+
+
+
+Melt & Cast
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = F, cache=T}
+datawide <- read.csv("melt.csv", stringsAsFactors=F)
+```
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+datawide
+```
+
+
+
+Melt
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+library(reshape)
+datalong <- melt(datawide, id=c("TIME"), na.rm=T)
+datalong
+```
+
+
+Cast
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+library(reshape)
+datawide2 <- cast(datalong, TIME~variable)
+#formula is column ~ row
+datawide2
+```
+
+
+
+Reshaping data - Summary
+========================================================
+
+For big data sets, reshaping can get complex  
+  
+The toolkit of rbind, cbind, melt and cast can do most jobs  
+  
+melting & casting takes practice  
+  
+Break the job down into smaller parts  
+  
+An R script provides an audit trail for the reshape  
+  
+If source data is updated, the R script is easily re-run  
+
+
+========================================================
+
+![](images/river_murray_small.jpg)
+
+
+Dates
+========================================================
+
+Pharmacometrics is all about dates and times!  
+  
+Dose and observations are recorded as a date and time  
+  
+We need to be fluent in converting dates and times to:  
+  * "Time After First Dose"  (TAFD)  
+  * "Time After Dose"  (TAD)  
+  * "Nominal Sample Time"  (TNOM) 
+
+TNOM is needed for pooling data across subjects  
+   
+Most data sets need all three times!  
+
+
+
+The problem with dates and times
+========================================================
+
+These all record the same event:  
+  * 14 February 1994 10:00  
+  * 14 Feb 1994 10:00  
+  * 14 Feb 1994 10 am  
+  * 14 Feb 1994 10:00:00  
+  * 14/2/1994 10:00  
+  * 2/14/1994 10:00  
+  * 2/14/94 10:00  
+  * 2-14-94 10:00  
+
+
+
+Dates and Excel
+========================================================
+
+  Excel will corrupt dates and times!  
+
+  It think's it's being helpful by automatically converting to local format  
+
+  You can't turn this off when opening a spreadsheet  
+
+  If working with non-US date and time formats, avoid Excel  
+
+
+
+POSIX Dates and Times
+========================================================
+
+  R represent dates and times in POSIX (UNIX) format.   
+
+  **POSIXlt:**  A standardized structured list:  seconds, minutes, hours, day of the month, months after the first of the year, years since 1900, day of the week starting on Sunday, day of the year, Daylight Savings Time flag.
+
+  **POSIXct:**  Number of seconds elapsed since midnight Coordinated Universal Time (UTC), 1 January 1970.  
+
+  There are functions that convert to and from these formats  
+  
+  There are functions for time calculations for these formats  
+
+
+
+POSIX Dates and Times
+========================================================
+
+Typically:  
+  * textstring to POSIX 
+  * time calculation in POSIX 
+  * POSIX to textstring or number  
+  
+Use inbuilt time functions if convenient  
+
+When complete numerical control is needed, use POSIXct  
+
+Both formats print as "2004-04-16 16:30:00 CST" despite different internal representation  
+
+
+The strptime function - text to POSIX
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T, cache=T} 
+    dosedatetime <- "4/15/2004 14:00"
+    dosedatetime <- strptime( dosedatetime, format = "%m/%d/%Y %H:%M")
+    dosedatetime
+    dosedatetime <- "2004-4-15 2:00 PM"
+    dosedatetime <- strptime( dosedatetime, format = "%Y-%m-%d %I:%M %p")
+    dosedatetime
+```
+
+  see ?strptime for textstring codes
+
+
+
+The difftime function
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+    dosedatetime <- "4/15/2004 14:00"
+    dosedatetime <- strptime( dosedatetime, format = "%m/%d/%Y %H:%M")
+
+    PKdatetime <- "4/16/2004 09:16"
+    PKdatetime <- strptime( PKdatetime, format = "%m/%d/%Y %H:%M")
+   
+    TAFD <- difftime(PKdatetime,dosedatetime, units="mins")
+    TAFD
+    TAFD <- difftime(PKdatetime,dosedatetime, units="hours")
+    TAFD
+```
+
+
+The difftime function
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+    TAFD
+    class(TAFD)
+    TAFD <- as.numeric(TAFD)
+    TAFD
+```
+
+
+Adding and subtracting times
+========================================================
+class: small-code
+
+  Time can be added and subtracted in seconds  
+  Results are in POSIXct format
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+  dosedatetime
+  TAFDh <- 26.5
+  TAFDsec <- TAFDh*60*60
+  PKdatetime <- dosedatetime + TAFDsec
+  PKdatetime
+```
+
+
+The strftime function - POSIXct to textstring
+========================================================
+class: small-code
+
+PKdatetime is class POSIXct
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+  PKdatetime 
+  PKdatetimetext <- strftime(PKdatetime, format = "%m-%d-%Y %I:%M %p")
+  PKdatetimetext  
+```
+
+
+
+The strftime function - POSIXct to textstring
+========================================================
+class: small-code
+
+PKdatetime is class POSIXct
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+  PKdatetext <- strftime(PKdatetime, format = "%m/%d/%Y")
+  PKdatetext
+```
+
+
+Dates and Times - Summary
+========================================================
+
+Date and time data can be messy  
+  
+Check databases for mixed date and time formats  
+
+NONMEM can read dates and times in limited formats  
+  
+R provides ways of manipulating date and time data to and from:
+  * TAFD (Time after First Dose)
+  * TAD (Time After Dose)
+  * TNOM (Nominal Time after Dose)
+
+
+========================================================
+
+![](images/DSCF4049.jpg)
+
+

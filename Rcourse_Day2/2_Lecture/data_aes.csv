@@ -1,0 +1,6 @@
+X,Y,ID,TRT
+0,2,Subject1,Baseline
+10,3,Subject1,Treated
+0,4,Subject2,Baseline
+10,6,Subject2,Treated
+
