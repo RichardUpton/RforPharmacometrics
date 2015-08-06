@@ -1,0 +1,629 @@
+<style>
+
+.reveal h2 {
+  color: blue;
+}
+
+.reveal h3 {
+  color: gray;
+}
+
+.small-code pre code {
+  font-size: 1em;
+}
+.midcenter {
+    position: fixed;
+    top: 10%;
+    left: 25%;
+}
+
+}
+</style>
+
+
+Statistics, Random Numbers and Stochastic Simulation
+========================================================
+author: Richard Upton
+date: 7 August 2015
+width: 960
+height: 700
+transition: rotate
+font-import: http://fonts.googleapis.com/css?family=Roboto
+font-import: http://fonts.googleapis.com/css?family=PT_Sans
+font-family: 'Roboto'
+
+
+```{r setup, cache = F, echo = F, message = F, warning = F}
+# make this an external chunk that can be included in any file
+#options(width = 70)
+require(ggplot2);
+require(doBy);
+require(plyr)
+```
+
+
+Statistics in R
+========================================================
+class: small-code
+
+There are plenty of textbooks on this!
+
+Here are the very basics
+
+```{r prompt=T, comment=NA, echo = T}
+statdata <- read.csv("stats_data.csv")
+statdata$AGEBIN <- as.factor(statdata$AGEBIN)
+head(statdata)
+```
+
+
+Statistics - Linear regression
+========================================================
+
+The variables are both continuous
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+result1 <- lm(WEIGHT~AGE, data=statdata)
+```
+
+
+Statistics - Linear regression
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = F, cache=T}
+summary(result1)
+```
+
+
+Statistics - Analysis of Variance 1
+========================================================
+
+Fact: ANOVA is a type of linear regression
+
+The independent variable is a factor
+
+It represented internally by "contrasts" - 0 or 1
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+result2 <- lm(WEIGHT~AGEBIN, data=statdata)
+```
+
+
+
+
+Statistics - Analysis of Variance 1
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = F, cache=T}
+summary(result2)
+```
+
+
+Statistics - Analysis of Variance 2
+========================================================
+
+This produces the same result  
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+result3 <- aov(WEIGHT~AGEBIN, data=statdata)
+```
+
+```{r prompt=T, comment=NA, echo = F, cache=T}
+summary(result3)
+```
+
+
+Statistical output
+========================================================
+class: small-code
+
+The statistical output is stored as a list object 
+
+Lists can be nested structures of mixed data types
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+names(result1)
+result1$coefficients["AGE"]
+```
+
+
+Repeated measures data
+========================================================
+class: small-code
+
+Use mixed-effect linear regression (lme)
+
+This is analogous to NONMEM with fixed and random effects
+
+```{r prompt=T, comment=NA, echo = T, cache=T}
+library(nlme)
+#lme(WEIGHT~AGEBIN, random= ~1|ID, data=repdata)
+```
+
+========================================================
+
+![](images/2012-09-22 14.16.27.jpg)
+
+
+
+Stochastic simulation
+========================================================
+
+  The simulation of a system that has random components  
+  
+  Randomness comes from a random number generator  
+  
+  The random numbers can be modified into various distributions  
+  * Normal  
+  * Log-normal  
+  * Uniform  
+  * Bionomial  
+
+
+Simulation in pharmacometrics
+========================================================
+
+All simulations from population models are stochastic  
+  
+The stochastic components (ETA, EPS) of the model are recreated by sampling from distributions of random numbers  
+
+Examples  
+  * Visual Predictive Check  
+  * Simulations of model prediction intervals  
+  * Clinical trial simulation  
+  * Simulations of study power  
+
+
+Generating random numbers
+========================================================
+
+  Many computer algorithms have been developed  
+
+  Pseudo-random numbers will eventually repeat  
+
+  Testing for randomness is complicated  
+  * plot(runif(10000) ~ runif(10000))   
+  * estimate pi  
+
+Bad algorithims repeat quickly and may be autocorrelated  
+  * Excel had problems  
+
+
+Random Number Table
+========================================================
+![](images/random_number_table.gif)
+
+
+A test of randomness
+========================================================
+class: small-code
+x and y are 10,000 independent random uniform numbers  
+
+```{r graphics, message=FALSE, echo=T, fig.width=6.5, fig.height=6.5}
+x <- runif(10000)
+y <- runif(10000)
+plot(y ~ x)
+```
+
+### Careful - we see patterns in randomness!   
+
+
+Why simulate in R rather than NONMEM?
+========================================================
+
+In NONMEM, doses and covariates are coded in the database  
+
+If you want to change these in a simulation, you make a new database  
+
+If it's complex simulation, this is usually done with R  
+
+And R might be used to plot the simulated data anyway  
+
+So cut out the middle man and use R for everything!  
+
+It may (sometimes!) be faster and easier  
+
+
+Generating random numbers in R
+========================================================
+
+R has a family of functions for random numbers  
+see ?Distributions  
+
+| function      | distribution | examples | 
+| ------------- |------------- | ------------- | 
+| rnorm         | normal       | additive residual error, PD baseline | 
+| rlnorm        | log-normal   | clearance, distribution volume | 
+| runif         | uniform      | age | 
+| rbinom        | binomial     | sex, genotype | 
+
+
+
+Related functions in R
+========================================================
+
+For each class of distribution  
+
+| function      | distribution |comment |  
+| ------------- |------------- |------------- | 
+| dnorm(x, mean=0, sd=1)         | gives the density of x       | used in maximum likelihood estimation  |
+| pnorm(x, mean=0, sd=1)         | gives the distribution function  | turns x into a probability    |
+| qnorm(p, mean=0, sd=1)         | gives the quantile function    |  turns probability into a quantile  |
+| rnorm(n, mean=0, sd=1)         | generate n random numbers     | from a distribution with mean=0 and sd=1   |
+
+
+Using the rnorm function
+========================================================
+class: small-code
+
+```{r prompt=T, comment=NA, echo = T}
+randomn <- rnorm(n=10, mean=2, sd=0.5)  
+randomn
+mean(randomn)
+sd(randomn)
+```
+
+
+Using the rnorm function
+========================================================
+class: small-code
+
+```{r , prompt=T, comment=NA, echo = T, fig.height = 6, fig.width = 7, fig.align = 'center'}
+randomn <- rnorm(n=1000, mean=2, sd=0.5)  
+hist(randomn)
+```
+
+
+Using the rlnorm function
+========================================================
+class: small-code
+
+```{r , prompt=T, comment=NA, echo = T, fig.height = 6, fig.width = 7, fig.align = 'center'}
+randomn <- rlnorm(n=1000, mean=log(2), sd=0.2)
+#Note sd is now a ratio  
+hist(randomn)
+```
+
+
+Using the runif function
+========================================================
+class: small-code
+
+```{r , prompt=T, comment=NA, echo = T, fig.height = 6, fig.width = 7, fig.align = 'center'}
+randomn <- runif(n=1000, min=20, max=80)  
+hist(randomn, breaks=10)
+```
+
+
+Using the rbinom function
+========================================================
+
+```{r , prompt=T, comment=NA, echo = T, fig.height = 6, fig.width = 7, fig.align = 'center'}
+randomn <- rbinom(n=1000, size=1, prob=0.25)  
+table(randomn)
+```
+
+
+A simulation to understand randomness
+========================================================
+
+```{r , prompt=T, comment=NA, echo = T, fig.height = 5, fig.width = 5, fig.align = 'center'}
+x <- rlnorm(n=10, mean=log(2), sd=0.2)  
+y <- rlnorm(n=10, mean=log(2), sd=0.2)  
+plot(y ~ x, col="blue")
+```
+
+
+We are programmed to see patterns!
+========================================================
+
+Our job as scientists is to distinguish information from randomness  
+
+p < 0.05 means we are happy to fooled by randomness 1 time out of 20!  
+
+For low powered studies, focus on effect size and uncertainty  
+
+p-values are for *confirming* not *learning* 
+
+
+Setting a seed for reproducible random numbers!
+========================================================
+
+```{r prompt=T, comment=NA, echo = T}
+#No seed set
+rnorm(n=3, mean=2, sd=0.5) 
+#No seed set
+rnorm(n=3, mean=2, sd=0.5) 
+```
+
+
+Setting a seed for reproducible random numbers!
+========================================================
+```{r prompt=T, comment=NA, echo = T}
+set.seed(123) 
+rnorm(n=3, mean=2, sd=0.5) 
+set.seed(123) 
+rnorm(n=3, mean=2, sd=0.5) 
+```
+
+
+Testing normality - quantile-quantile plots
+========================================================
+
+```{r prompt=T, comment=NA, echo = T, fig.height = 4, fig.width = 4, fig.align = 'center'}
+x <- rnorm(1000)
+qqnorm(x) 
+```
+
+
+Testing normality - quantile-quantile plots
+========================================================
+```{r prompt=T, comment=NA, echo = T, fig.height = 4, fig.width = 4, fig.align = 'center'}
+y <- rlnorm(1000)
+qqnorm(y) 
+```
+
+
+Log-normal distributions in biology
+========================================================
+
+  Normal distributions arise from additive process  
+  **c(mean+1, mean+3, mean+0, mean-2, mean+2)**  
+
+  Log-normal distributions arise from multiplicative processes  
+  **c(mean*2, mean/3, mean*1, mean/2, mean*4)**  
+
+  Log-normal distributions are common in biological systems  
+
+  No zero values, right skewed, occasional high values  
+
+  Described by the geometric mean, the standard deviation is a ratio  
+
+  If x is normal, log(x) is log-normal  
+  If x is log-normal, exp(x) is normal  
+
+
+Truncated & Censored distributions
+========================================================
+
+A metric may have normal distribution  
+
+But our ability to measure the metric might be censored:  
+
+  * LLOQ of an assay
+  * Ethical limits for thermal pain tests
+
+The distribution we measure is censored or truncated
+
+This may need to replicated in a model
+
+
+Non-normal distributions
+========================================================
+Skewed  
+  * Left (median > mean)
+  * Right (median < mean)  
+
+Kurtotic  
+  * Unimodal (median = mean)
+  * Platykurtic, thin-tailed, peaky
+  * Leptokurtic, fat-tailed, flat  
+
+Multi-modal  
+  * More than 1 peak   
+
+
+Transformed distributions
+========================================================
+
+NONMEM simulations assume an underlying normal distribution for ETA  
+
+A transformation may replicate a skewed parameter distribution
+
+Transformations try to "normalize" a distribution  
+  * Log-normal
+  * Box-Cox
+  * Manly
+
+See Petersson et al., *Pharm Res* 2009 26:2174-85
+
+
+Additive Between Subject Variability
+========================================================
+
+Effect = Baseline + Slope*Conc  
+
+
+```{r , prompt=T, comment=NA, echo = T, cache=T}
+nsubs <- 1000
+SLOPEpop <- 2
+ETA <- rnorm(nsubs, mean=0, sd=1.5)
+SLOPE <- SLOPEpop + ETA
+``` 
+ETA is normally distributed  
+SLOPE is normally distributed  
+SLOPE can take negative values  
+
+
+========================================================
+```{r , prompt=T, comment=NA, echo = T, fig.height = 5, fig.width = 5, fig.align="center"}
+hist(SLOPE)
+``` 
+
+
+
+Exponential Between Subject Variability
+========================================================
+
+CL = CLpop*exp(ETA)  
+
+```{r , prompt=T, comment=NA, echo = T, cache=T}
+nsubs <- 1000
+CLpop <- 2
+ETA <- rnorm(nsubs, mean=0, sd=0.2)
+CL <- CLpop*exp(ETA)
+``` 
+ETA is normally distributed  
+CL is log-normally distributed   
+CL can't take negative values   
+SD of CL is $0.2$  
+VAR of CL is $0.2^2 = 0.04$  
+
+
+Exponential Between Subject Variability
+========================================================
+```{r , prompt=T, comment=NA, echo = T, fig.height = 5, fig.width = 5, fig.align="center"}
+hist(CL)
+``` 
+
+
+Additive Residual Error
+========================================================
+
+Y = F + EPS  
+F is model predicted concentration (fake with uniform random numbers!)  
+
+
+```{r , prompt=T, comment=NA, echo = T, cache=T}
+nobs <- 1000
+F <- runif(nobs, min=0, max=10)
+EPS <- rnorm(nobs, mean=0, sd=1.5)
+Y <- F + EPS
+``` 
+Y (DV) is F with RUV  
+F is never negative  
+Y has negative values  
+shape = "tram tracks"  
+
+
+Additive Residual Error
+========================================================
+
+```{r , prompt=T, comment=NA, echo = T, fig.height = 5, fig.width = 5, fig.align="center"}
+plot(Y ~ F, col="blue")
+``` 
+
+
+Proportional Residual Error
+========================================================
+
+Y = F*(1 + EPS) or Y = F + F*EPS  
+
+```{r , prompt=T, comment=NA, echo = T, cache=T}
+nobs <- 1000
+F <- runif(nobs, min=0, max=10)
+EPS <- rnorm(nobs, mean=0, sd=0.1)
+Y <- F*(1 + EPS)
+``` 
+Y (DV) is F with RUV  
+F is never negative  
+Y is never negative  
+ (unless sd is large!)  
+shape = "cone"  
+
+
+Proportional Residual Error
+========================================================
+```{r , prompt=T, comment=NA, echo = T, fig.height = 5, fig.width = 5, fig.align="center"}
+plot(Y ~ F, col="blue")
+``` 
+
+
+Additive and Proportional Residual Error
+========================================================
+
+Y = F*(1 + EPS1) + EPS2
+
+```{r , prompt=T, comment=NA, echo = T, cache=T}
+nobs <- 1000
+F <- runif(nobs, min=0, max=10)
+EPS1 <- rnorm(nobs, mean=0, sd=0.1)
+EPS2 <- rnorm(nobs, mean=0, sd=0.5)
+Y <- F*(1 + EPS1) + EPS2
+``` 
+Y (DV) is F with RUV  
+F is never negative  
+Y can be negative  
+ (at low concentrations)  
+shape = "tramtracks+cone"  
+
+
+Additive and Proportional Residual Error
+========================================================
+```{r , prompt=T, comment=NA, echo = T, fig.height = 5, fig.width = 5, fig.align="center"}
+plot(Y ~ F, col="blue")
+``` 
+
+
+How many simulations?
+========================================================
+
+Enough!  
+
+Simulations are repeated until the effect of randomness on summary statistics (e.g. mean and CI) are minimal  
+
+Some rules of thumb:  
+ * 200 times for a mean  
+ * 1,000 times for a confidence interval  
+ * 10,000 times for study power  
+
+Capacity may be limited by computer memory for big problems(64 bit helps)  
+
+
+Covariance 
+========================================================
+
+Covariance is a measure of how much two random variables change together  
+
+Not accounting for covariance may mean simulating implausible combinations of random numbers  
+
+```{r , prompt=T, comment=NA, echo = T, cache=T}
+HEIGHTcm <- rnorm(1000, mean=170, sd=12)
+WEIGHTkg <- rnorm(1000, mean=70, sd=8)
+
+``` 
+
+Without Covariance 
+========================================================
+```{r , prompt=T, comment=NA, echo = F, fig.height = 5, fig.width = 5, fig.align="center"}
+plot(WEIGHTkg ~ HEIGHTcm, col="blue")
+``` 
+
+
+Covariance 
+========================================================
+  
+Covariance in NONMEM comes from $OMEGA BLOCK  
+
+Simulating correlated random numbers is complex  
+
+```{r , prompt=T, comment=NA, echo = T, cache=T}
+library(MASS)
+OMEGA <- matrix(c(150,80,40,65),2,2)
+result <- mvrnorm(n=1000, mu=c(170,70), OMEGA)
+HEIGHTcm <- result[,1]
+WEIGHTkg <- result[,2]
+``` 
+
+With Covariance 
+========================================================
+```{r , prompt=T, comment=NA, echo = F, fig.height = 5, fig.width = 5, fig.align="center"}
+plot(WEIGHTkg ~ HEIGHTcm, col="blue")
+``` 
+
+
+Summary
+========================================================
+
+Generating random numbers shows the influence of randomness on data 
+
+  * Use simulation to educate yourself about how randomness affects your data  
+
+Random numbers are at the heart of every population model  
+
+  * Use simulation to educate yourself about how randomness affects your model  
+
+Study design and study power are moving toward simulation based methods  
+
